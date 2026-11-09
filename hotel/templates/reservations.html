@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Reservations{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reservations</h1>
+    <p>Every booking, newest check-in first.</p>
+  </div>
+  <div class="actions"><a class="btn btn-primary" href="{{ url_for('main.reservation_new') }}">New reservation</a></div>
+</div>
+
+<form class="search" method="get" role="search" style="margin-bottom:1rem">
+  <label for="q" style="position:absolute;left:-9999px">Search reservations</label>
+  <input type="search" id="q" name="q" value="{{ q }}" placeholder="Guest name, room or number">
+  <label for="status" style="position:absolute;left:-9999px">Status</label>
+  <select id="status" name="status">
+    <option value="">All statuses</option>
+    <option value="active" {{ 'selected' if status == 'active' }}>Active (confirmed or checked in)</option>
+    {% for key, label in status_labels.items() %}<option value="{{ key }}" {{ 'selected' if status == key }}>{{ label }}</option>{% endfor %}
+  </select>
+  <button class="btn" type="submit">Filter</button>
+  {% if q or status %}<a class="btn" href="{{ url_for('main.reservations') }}">Clear</a>{% endif %}
+</form>
+
+{% if reservations %}
+<div class="table-wrap">
+  <table class="table stack">
+    <thead><tr><th>#</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th class="right">Nights</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for r in reservations %}
+      <tr>
+        <td data-label="Reservation"><a href="{{ url_for('main.reservation_detail', reservation_id=r.id) }}">#{{ r.id }}</a></td>
+        <td data-label="Guest">{{ r.guest_name }}</td>
+        <td data-label="Room">{{ r.room_number }} ({{ r.room_type }})</td>
+        <td data-label="Check-in" class="nowrap">{{ r.check_in|fmt_date }}</td>
+        <td data-label="Check-out" class="nowrap">{{ r.check_out|fmt_date }}</td>
+        <td data-label="Nights" class="right num">{{ r.nights }}</td>
+        <td data-label="Status"><span class="badge badge-{{ r.status }}">{{ status_labels[r.status] }}</span></td>
+        <td class="row-actions">
+          <a class="btn btn-sm" href="{{ url_for('main.reservation_detail', reservation_id=r.id) }}">Open</a>
+          <a class="btn btn-sm" href="{{ url_for('main.bill', reservation_id=r.id) }}">Bill</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted" style="margin-top:.6rem">{{ reservations|length }} reservation{{ '' if reservations|length == 1 else 's' }} shown.</p>
+{% elif q or status %}
+<div class="panel empty">
+  <p>No reservations match those filters.</p>
+  <a class="btn" href="{{ url_for('main.reservations') }}">Show all reservations</a>
+</div>
+{% else %}
+<div class="panel empty">
+  <p>No reservations yet. Add a room and a guest first, then create a booking.</p>
+  <a class="btn btn-primary" href="{{ url_for('main.reservation_new') }}">New reservation</a>
+</div>
+{% endif %}
+{% endblock %}

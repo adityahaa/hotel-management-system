@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Availability{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Availability</h1>
+    <p>{{ grid.start|fmt_date }} to {{ (grid.dates[-1])|fmt_date }}. Empty cells are free nights.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('main.availability', start=prev_start.isoformat(), days=days) }}">Earlier</a>
+    <a class="btn" href="{{ url_for('main.availability', days=days) }}">Today</a>
+    <a class="btn" href="{{ url_for('main.availability', start=next_start.isoformat(), days=days) }}">Later</a>
+    <a class="btn btn-primary" href="{{ url_for('main.reservation_new') }}">New reservation</a>
+  </div>
+</div>
+
+<form method="get" class="search" style="margin-bottom:1rem">
+  <input type="hidden" name="start" value="{{ grid.start.isoformat() }}">
+  <label for="days" class="hint">Show</label>
+  <select id="days" name="days" data-autosubmit>
+    {% for n in (7, 14, 28) %}<option value="{{ n }}" {{ 'selected' if n == days }}>{{ n }} days</option>{% endfor %}
+  </select>
+  <button class="btn btn-sm" type="submit">Update</button>
+  <div class="legend" style="margin-left:auto">
+    <span style="--c:#fff;--b:1">Free</span>
+    <span style="--c: var(--reserved)">Reserved</span>
+    <span style="--c: var(--occupied)">Checked in</span>
+    <span style="--c:#d5d9e0">Out of service</span>
+  </div>
+</form>
+
+{% if grid.rows %}
+<div class="timeline-wrap">
+  <table class="timeline">
+    <thead>
+      <tr>
+        <th class="room-col" scope="col">Room</th>
+        {% for d in grid.dates %}
+          <th scope="col" class="{{ 'is-today' if d == today }}">{{ d.strftime('%a') }}<br>{{ d.strftime('%d %b') }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in grid.rows %}
+      <tr>
+        <th class="room-col" scope="row">{{ row.room.room_number }} <span class="muted">{{ row.room.room_type }}</span></th>
+        {% for cell in row.cells %}
+          {% if cell.closed %}
+            <td class="cell-closed" title="Out of service"></td>
+          {% elif cell.reservation %}
+            {% set r = cell.reservation %}
+            <td class="{{ 'cell-occupied' if r.status == 'checked_in' else 'cell-reserved' }}"
+                title="Reservation #{{ r.id }}: {{ r.guest_name }}, {{ r.check_in|fmt_date }} to {{ r.check_out|fmt_date }}">
+              <a href="{{ url_for('main.reservation_detail', reservation_id=r.id) }}"><span aria-hidden="true">#{{ r.id }}</span><span style="position:absolute;left:-9999px">Reservation {{ r.id }}, {{ r.guest_name }}</span></a>
+            </td>
+          {% else %}
+            <td class="cell-free"><a href="{{ url_for('main.reservation_new', room_id=row.room.id, check_in=cell.date.isoformat(), check_out=(cell.date + one_day).isoformat()) }}" style="display:block;height:100%;min-height:2.4rem" title="Book room {{ row.room.room_number }} for {{ cell.date|fmt_day }}"><span style="position:absolute;left:-9999px">Free, book room {{ row.room.room_number }} for {{ cell.date|fmt_day }}</span></a></td>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="panel empty">
+  <p>No rooms yet, so there is nothing to show.</p>
+  <a class="btn btn-primary" href="{{ url_for('main.room_new') }}">Add a room</a>
+</div>
+{% endif %}
+{% endblock %}

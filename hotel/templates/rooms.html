@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Rooms{% endblock %}
+{% block content %}
+{% set state_badge = {'available': 'active', 'occupied': 'checked_in', 'reserved': 'confirmed', 'closed': 'closed'} %}
+{% set state_label = {'available': 'Available', 'occupied': 'Occupied', 'reserved': 'Reserved', 'closed': 'Out of service'} %}
+<div class="page-head">
+  <div>
+    <h1>Rooms</h1>
+    <p>Room details and nightly rates. The status column shows today.</p>
+  </div>
+  <div class="actions"><a class="btn btn-primary" href="{{ url_for('main.room_new') }}">Add room</a></div>
+</div>
+
+{% if states %}
+<div class="table-wrap">
+  <table class="table stack">
+    <thead>
+      <tr><th>Room</th><th>Type</th><th class="right">Sleeps</th><th class="right">Rate per night</th><th>Status today</th><th>Description</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for item in states %}
+      {% set room = item.room %}
+      <tr>
+        <td data-label="Room"><strong>{{ room.room_number }}</strong></td>
+        <td data-label="Type">{{ room.room_type }}</td>
+        <td data-label="Sleeps" class="right num">{{ room.capacity }}</td>
+        <td data-label="Rate per night" class="right num">{{ room.rate_cents|money }}</td>
+        <td data-label="Status today"><span class="badge badge-{{ state_badge[item.state] }}">{{ state_label[item.state] }}</span></td>
+        <td data-label="Description" class="muted">{{ room.description or '-' }}</td>
+        <td class="row-actions">
+          {% if room.is_active %}<a class="btn btn-sm" href="{{ url_for('main.reservation_new', room_id=room.id) }}">Book</a>{% endif %}
+          <a class="btn btn-sm" href="{{ url_for('main.room_edit', room_id=room.id) }}">Edit</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="panel empty">
+  <p>No rooms yet. Add each room with its type, capacity and nightly rate.</p>
+  <a class="btn btn-primary" href="{{ url_for('main.room_new') }}">Add the first room</a>
+</div>
+{% endif %}
+{% endblock %}

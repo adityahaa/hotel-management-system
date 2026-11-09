@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "_macros.html" import mini_table with context %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p>{{ today.strftime('%A') }}, {{ today|fmt_date }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('main.reservation_new') }}">New reservation</a>
+    <a class="btn" href="{{ url_for('main.guest_new') }}">Add guest</a>
+  </div>
+</div>
+
+<div class="figures" role="group" aria-label="Overview">
+  <div class="figure"><div class="figure-value">{{ rooms_in_service }}</div><div class="figure-label">Rooms in service</div></div>
+  <div class="figure"><div class="figure-value">{{ counts.occupied }}</div><div class="figure-label">Occupied now</div></div>
+  <div class="figure"><div class="figure-value">{{ counts.reserved }}</div><div class="figure-label">Reserved, not arrived</div></div>
+  <div class="figure"><div class="figure-value">{{ counts.available }}</div><div class="figure-label">Available now</div></div>
+  <div class="figure"><div class="figure-value">{{ active_reservations }}</div><div class="figure-label">Active reservations</div></div>
+  <div class="figure"><div class="figure-value">{{ guest_count }}</div><div class="figure-label">Guests on record</div></div>
+</div>
+<p class="muted" style="margin-top:.6rem">
+  {{ total_reservations }} reservation{{ '' if total_reservations == 1 else 's' }} on record:
+  {{ status_counts.confirmed }} confirmed, {{ status_counts.checked_in }} checked in,
+  {{ status_counts.checked_out }} checked out, {{ status_counts.cancelled }} cancelled.
+</p>
+
+<section class="section" aria-labelledby="rack-title">
+  <div class="section-head">
+    <h2 id="rack-title">Room status today</h2>
+    <div class="legend" aria-label="Legend">
+      <span style="--c: var(--available)">Available</span>
+      <span style="--c: var(--reserved)">Reserved</span>
+      <span style="--c: var(--occupied)">Occupied</span>
+      <span style="--c: var(--closed)">Out of service</span>
+    </div>
+  </div>
+  {% if states %}
+  <div class="keys">
+    {% for item in states %}
+      {% set room = item.room %}
+      {% set res = item.reservation %}
+      {% if res %}{% set href = url_for('main.reservation_detail', reservation_id=res.id) %}
+      {% elif item.state == 'available' %}{% set href = url_for('main.reservation_new', room_id=room.id) %}
+      {% else %}{% set href = url_for('main.room_edit', room_id=room.id) %}{% endif %}
+      <a class="key state-{{ item.state }}" href="{{ href }}">
+        <span class="key-number">{{ room.room_number }}</span>
+        <span class="key-type">{{ room.room_type }}, sleeps {{ room.capacity }}</span>
+        <span class="key-state">{{ {'available': 'Available', 'reserved': 'Reserved', 'occupied': 'Occupied', 'closed': 'Out of service'}[item.state] }}</span>
+        {% if res %}<span class="key-who">{{ res.guest_name }}</span>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="panel empty">
+    <p>No rooms have been added yet.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.room_new') }}">Add the first room</a>
+  </div>
+  {% endif %}
+</section>
+
+<div class="cols section">
+  <section aria-labelledby="arr-title">
+    <div class="section-head"><h2 id="arr-title">Arrivals today</h2></div>
+    {{ mini_table(arrivals, 'No arrivals expected today.') }}
+  </section>
+  <section aria-labelledby="dep-title">
+    <div class="section-head"><h2 id="dep-title">Departures due</h2></div>
+    {{ mini_table(departures, 'No checked-in guests are due to leave.', true, today.isoformat()) }}
+  </section>
+</div>
+
+<div class="cols section">
+  <section aria-labelledby="house-title">
+    <div class="section-head"><h2 id="house-title">Guests in house</h2></div>
+    {{ mini_table(in_house, 'Nobody is checked in right now.', true, today.isoformat()) }}
+  </section>
+  <section aria-labelledby="soon-title">
+    <div class="section-head"><h2 id="soon-title">Arriving in the next 7 days</h2></div>
+    {{ mini_table(upcoming, 'No other arrivals in the next 7 days.') }}
+  </section>
+</div>
+
+<section class="section" aria-labelledby="recent-title">
+  <div class="section-head">
+    <h2 id="recent-title">Latest bookings</h2>
+    <a href="{{ url_for('main.reservations') }}">View all reservations</a>
+  </div>
+  {% if recent %}
+  <div class="table-wrap">
+    <table class="table stack">
+      <thead><tr><th>Reservation</th><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in recent %}
+        <tr>
+          <td data-label="Reservation"><a href="{{ url_for('main.reservation_detail', reservation_id=r.id) }}">#{{ r.id }}</a></td>
+          <td data-label="Guest">{{ r.guest_name }}</td>
+          <td data-label="Room">{{ r.room_number }}</td>
+          <td data-label="Check-in">{{ r.check_in|fmt_date }}</td>
+          <td data-label="Check-out">{{ r.check_out|fmt_date }}</td>
+          <td data-label="Status"><span class="badge badge-{{ r.status }}">{{ status_labels[r.status] }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="panel empty">
+    <p>No reservations yet. Add a room and a guest, then create the first booking.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.reservation_new') }}">New reservation</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ guest.full_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ guest.full_name }}</h1>
+    <p>Guest record #{{ guest.id }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('main.reservation_new', guest_id=guest.id) }}">New reservation</a>
+    <a class="btn" href="{{ url_for('main.guest_edit', guest_id=guest.id) }}">Edit details</a>
+  </div>
+</div>
+
+<div class="panel"><div class="panel-body">
+  <dl class="facts">
+    <div><dt>Phone</dt><dd>{{ guest.phone }}</dd></div>
+    <div><dt>Email</dt><dd>{{ guest.email or '-' }}</dd></div>
+    <div><dt>Address</dt><dd>{{ guest.address or '-' }}</dd></div>
+    <div><dt>Added</dt><dd>{{ guest.created_at[:10]|fmt_date }}</dd></div>
+    <div style="grid-column:1/-1"><dt>Notes</dt><dd style="font-weight:400;white-space:pre-line">{{ guest.notes or '-' }}</dd></div>
+  </dl>
+</div></div>
+
+<section class="section" aria-labelledby="stays-title">
+  <div class="section-head"><h2 id="stays-title">Stays</h2></div>
+  {% if reservations %}
+  <div class="table-wrap">
+    <table class="table stack">
+      <thead><tr><th>Reservation</th><th>Room</th><th>Check-in</th><th>Check-out</th><th class="right">Nights</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for r in reservations %}
+        <tr>
+          <td data-label="Reservation"><a href="{{ url_for('main.reservation_detail', reservation_id=r.id) }}">#{{ r.id }}</a></td>
+          <td data-label="Room">{{ r.room_number }} ({{ r.room_type }})</td>
+          <td data-label="Check-in">{{ r.check_in|fmt_date }}</td>
+          <td data-label="Check-out">{{ r.check_out|fmt_date }}</td>
+          <td data-label="Nights" class="right num">{{ r.nights }}</td>
+          <td data-label="Status"><span class="badge badge-{{ r.status }}">{{ status_labels[r.status] }}</span></td>
+          <td class="row-actions"><a class="btn btn-sm" href="{{ url_for('main.bill', reservation_id=r.id) }}">Bill</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="panel empty"><p>This guest has no reservations yet.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Bill {{ bill_number }}{% endblock %}
+{% block content %}
+{% set res = reservation %}
+<div class="page-head no-print">
+  <div>
+    <h1>Bill {{ bill_number }}</h1>
+    <p>Print this page, or choose "Save as PDF" in the print window to keep a copy.</p>
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" type="button" data-print>Print or save as PDF</button>
+    <a class="btn" href="{{ url_for('main.reservation_detail', reservation_id=res.id) }}">Back to reservation</a>
+  </div>
+</div>
+
+{% if not billable %}
+<div class="alert alert-warn no-print">This reservation is cancelled, so nothing is billable. The figures show what the stay would have cost.</div>
+{% endif %}
+
+<article class="bill-sheet" aria-label="Guest bill">
+  <header class="bill-head">
+    <div>
+      <div class="bill-hotel">{{ hotel.hotel_name }}</div>
+      <div>{{ hotel.hotel_address }}</div>
+    </div>
+    <div class="bill-meta">
+      <strong>Bill {{ bill_number }}</strong><br>
+      Printed {{ today|fmt_date }}<br>
+      Reservation #{{ res.id }}, {{ status_labels[res.status] }}
+    </div>
+  </header>
+
+  <section class="bill-parties">
+    <div>
+      <h3>Guest</h3>
+      {{ res.guest_name }}<br>
+      {{ res.guest_phone }}
+      {% if res.guest_email %}<br>{{ res.guest_email }}{% endif %}
+    </div>
+    <div>
+      <h3>Stay</h3>
+      Room {{ res.room_number }} ({{ res.room_type }})<br>
+      {{ res.check_in|fmt_date }} to {{ res.check_out|fmt_date }}<br>
+      {{ bill.nights }} night{{ '' if bill.nights == 1 else 's' }}, {{ res.num_guests }} guest{{ '' if res.num_guests == 1 else 's' }}
+    </div>
+  </section>
+
+  {% include "_bill_lines.html" %}
+
+  {% if not billable %}<p class="bill-note"><strong>Cancelled.</strong> No amount is due for this reservation.</p>{% endif %}
+  <p class="bill-note">
+    All amounts are in {{ hotel.currency_symbol }}. This is a record of charges only. This application does not process
+    payments, so no payment has been taken or recorded.
+  </p>
+</article>
+{% endblock %}

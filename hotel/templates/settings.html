@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field_error with context %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Settings</h1>
+    <p>Hotel details and the charges added to every bill.</p>
+  </div>
+</div>
+
+{% if errors %}<div class="alert alert-error" role="alert">Please fix the highlighted fields.</div>{% endif %}
+
+<form method="post" class="form" autocomplete="off">
+  {{ csrf() }}
+  <div class="form-grid">
+    <div class="field full {{ 'has-error' if errors.get('hotel_name') }}">
+      <label for="hotel_name">Hotel name</label>
+      <input type="text" id="hotel_name" name="hotel_name" value="{{ form.get('hotel_name', '') }}" maxlength="60" required>
+      {{ field_error(errors, 'hotel_name') }}
+    </div>
+    <div class="field full {{ 'has-error' if errors.get('hotel_address') }}">
+      <label for="hotel_address">Address shown on bills</label>
+      <input type="text" id="hotel_address" name="hotel_address" value="{{ form.get('hotel_address', '') }}" maxlength="120">
+      {{ field_error(errors, 'hotel_address') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('currency_symbol') }}">
+      <label for="currency_symbol">Currency symbol</label>
+      <input type="text" id="currency_symbol" name="currency_symbol" value="{{ form.get('currency_symbol', '') }}" maxlength="4" required>
+      <span class="hint">Only changes how amounts are displayed. No conversion is done.</span>
+      {{ field_error(errors, 'currency_symbol') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('tax_name') }}">
+      <label for="tax_name">Tax label</label>
+      <input type="text" id="tax_name" name="tax_name" value="{{ form.get('tax_name', '') }}" maxlength="20" required>
+      <span class="hint">For example Tax, GST or VAT.</span>
+      {{ field_error(errors, 'tax_name') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('service_percent') }}">
+      <label for="service_percent">Service charge (%)</label>
+      <input type="text" id="service_percent" name="service_percent" inputmode="decimal" value="{{ form.get('service_percent', '') }}" required>
+      <span class="hint">Charged on the room and extras. Enter 0 for none.</span>
+      {{ field_error(errors, 'service_percent') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('tax_percent') }}">
+      <label for="tax_percent">Tax rate (%)</label>
+      <input type="text" id="tax_percent" name="tax_percent" inputmode="decimal" value="{{ form.get('tax_percent', '') }}" required>
+      <span class="hint">Charged on the subtotal plus service charge. Enter 0 for none.</span>
+      {{ field_error(errors, 'tax_percent') }}
+    </div>
+  </div>
+  <div class="alert alert-info">
+    The default rates are examples only, not tax advice. Changes apply to new reservations. Existing reservations keep the rates they were booked with, so earlier bills do not change.
+  </div>
+  <div class="form-actions"><button class="btn btn-primary" type="submit">Save settings</button></div>
+</form>
+{% endblock %}

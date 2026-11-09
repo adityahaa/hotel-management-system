@@ -1,0 +1,55 @@
+{# Small reusable pieces shared by several pages. Import with: {% from "_macros.html" import ... with context %} #}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro badge(status) %}<span class="badge badge-{{ status }}">{{ status_labels[status] }}</span>{% endmacro %}
+
+{% macro field_error(errors, name) %}{% if errors.get(name) %}<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+
+{# One room in the availability list on the booking form. #}
+{% macro avail_item(item, selected) %}
+<li>
+  <label class="avail-item {{ 'is-free' if item.available else 'is-taken' }}">
+    <input type="radio" name="room_id" value="{{ item.room.id }}" required
+           {% if not item.available %}disabled{% endif %}
+           {% if item.available and selected == item.room.id|string %}checked{% endif %}>
+    <span>
+      <span class="avail-main">Room {{ item.room.room_number }}</span>
+      <span class="muted">{{ item.room.room_type }}</span><br>
+      <span class="avail-sub">Sleeps {{ item.room.capacity }}, {{ item.room.rate_cents|money }} per night</span>
+    </span>
+    <span class="avail-side">
+      {% if item.available %}
+        <span class="avail-state">Available</span><br>
+        <span class="avail-price">Estimated total {{ item.estimate_total_cents|money }}</span>
+      {% else %}
+        <span class="avail-state">Not available</span><br>
+        <span class="avail-price">{{ item.reason }}</span>
+      {% endif %}
+    </span>
+  </label>
+</li>
+{% endmacro %}
+
+{# Compact reservation table for the dashboard. #}
+{% macro mini_table(rows, empty_text, flag_overdue=false, today_iso='') %}
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table stack">
+      <thead><tr><th>Guest</th><th>Room</th><th>Stay</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td data-label="Guest"><a href="{{ url_for('main.reservation_detail', reservation_id=r.id) }}">{{ r.guest_name }}</a></td>
+          <td data-label="Room">{{ r.room_number }}</td>
+          <td data-label="Stay">{{ r.check_in|fmt_day }} to {{ r.check_out|fmt_day }}
+            {% if flag_overdue and r.check_out < today_iso %}<span class="badge badge-flag">Overdue</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="panel empty"><p>{{ empty_text }}</p></div>
+  {% endif %}
+{% endmacro %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Guests{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Guests</h1>
+    <p>Search by name, email or phone number.</p>
+  </div>
+  <div class="actions"><a class="btn btn-primary" href="{{ url_for('main.guest_new') }}">Add guest</a></div>
+</div>
+
+<form class="search" method="get" role="search" style="margin-bottom:1rem">
+  <label class="hint" for="q" style="position:absolute;left:-9999px">Search guests</label>
+  <input type="search" id="q" name="q" value="{{ q }}" placeholder="Search guests">
+  <button class="btn" type="submit">Search</button>
+  {% if q %}<a class="btn" href="{{ url_for('main.guests') }}">Clear</a>{% endif %}
+</form>
+
+{% if guests %}
+<div class="table-wrap">
+  <table class="table stack">
+    <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th class="right">Bookings</th><th></th></tr></thead>
+    <tbody>
+    {% for g in guests %}
+      <tr>
+        <td data-label="Name"><a href="{{ url_for('main.guest_detail', guest_id=g.id) }}"><strong>{{ g.full_name }}</strong></a></td>
+        <td data-label="Phone" class="nowrap">{{ g.phone }}</td>
+        <td data-label="Email">{{ g.email or '-' }}</td>
+        <td data-label="Bookings" class="right num">{{ g.booking_count }}</td>
+        <td class="row-actions">
+          <a class="btn btn-sm" href="{{ url_for('main.reservation_new', guest_id=g.id) }}">Book</a>
+          <a class="btn btn-sm" href="{{ url_for('main.guest_edit', guest_id=g.id) }}">Edit</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted" style="margin-top:.6rem">{{ guests|length }} guest{{ '' if guests|length == 1 else 's' }}{{ ' matching "' ~ q ~ '"' if q }}.</p>
+{% elif q %}
+<div class="panel empty">
+  <p>No guests match "{{ q }}". Check the spelling or try part of the name, email or phone number.</p>
+  <a class="btn" href="{{ url_for('main.guests') }}">Show all guests</a>
+</div>
+{% else %}
+<div class="panel empty">
+  <p>No guests yet. Add a guest before creating a reservation.</p>
+  <a class="btn btn-primary" href="{{ url_for('main.guest_new') }}">Add the first guest</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge, field_error with context %}
+{% block title %}Reservation #{{ res.id }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reservation #{{ res.id }} {{ badge(res.status) }}</h1>
+    <p>{{ res.guest_name }}, room {{ res.room_number }}, {{ res.check_in|fmt_date }} to {{ res.check_out|fmt_date }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('main.bill', reservation_id=res.id) }}">View bill</a>
+    {% for new_status, label, enabled, hint in actions %}
+      <form method="post" class="inline-form" action="{{ url_for('main.reservation_status', reservation_id=res.id) }}"
+            {% if new_status == 'cancelled' %}data-confirm="Cancel reservation #{{ res.id }} for {{ res.guest_name }}? This cannot be undone."{% endif %}
+            {% if new_status == 'checked_out' %}data-confirm="Check {{ res.guest_name }} out of room {{ res.room_number }}?"{% endif %}>
+        {{ csrf() }}
+        <input type="hidden" name="status" value="{{ new_status }}">
+        <button class="btn {{ 'btn-primary' if new_status != 'cancelled' else 'btn-danger' }}" type="submit"
+                {% if not enabled %}disabled title="{{ hint }}"{% endif %}>{{ label }}</button>
+      </form>
+    {% endfor %}
+  </div>
+</div>
+{% for new_status, label, enabled, hint in actions %}
+  {% if not enabled %}<p class="hint">{{ label }} is not available yet: {{ hint|lower }}.</p>{% endif %}
+{% endfor %}
+
+<div class="panel"><div class="panel-body">
+  <dl class="facts">
+    <div><dt>Guest</dt><dd><a href="{{ url_for('main.guest_detail', guest_id=res.guest_id) }}">{{ res.guest_name }}</a></dd></div>
+    <div><dt>Phone</dt><dd>{{ res.guest_phone }}</dd></div>
+    <div><dt>Room</dt><dd>{{ res.room_number }}, {{ res.room_type }}</dd></div>
+    <div><dt>Guests</dt><dd>{{ res.num_guests }}</dd></div>
+    <div><dt>Check-in</dt><dd>{{ res.check_in|fmt_date }}</dd></div>
+    <div><dt>Check-out</dt><dd>{{ res.check_out|fmt_date }}</dd></div>
+    <div><dt>Nights</dt><dd>{{ res.nights }}</dd></div>
+    <div><dt>Rate per night (fixed at booking)</dt><dd>{{ res.rate_cents|money }}</dd></div>
+    <div><dt>Booked on</dt><dd>{{ res.created_at|fmt_datetime }}</dd></div>
+    {% if res.checked_in_at %}<div><dt>Checked in at</dt><dd>{{ res.checked_in_at|fmt_datetime }}</dd></div>{% endif %}
+    {% if res.checked_out_at %}<div><dt>Checked out at</dt><dd>{{ res.checked_out_at|fmt_datetime }}</dd></div>{% endif %}
+    {% if res.cancelled_at %}<div><dt>Cancelled at</dt><dd>{{ res.cancelled_at|fmt_datetime }}</dd></div>{% endif %}
+    {% if res.notes %}<div style="grid-column:1/-1"><dt>Notes</dt><dd style="font-weight:400;white-space:pre-line">{{ res.notes }}</dd></div>{% endif %}
+  </dl>
+</div></div>
+
+<div class="cols section">
+  <section aria-labelledby="bill-title">
+    <div class="section-head">
+      <h2 id="bill-title">Charges so far</h2>
+      <a href="{{ url_for('main.bill', reservation_id=res.id) }}">Open printable bill</a>
+    </div>
+    {% if res.status == 'cancelled' %}
+      <div class="alert alert-warn">This reservation is cancelled, so nothing is billable. The figures show what the stay would have cost.</div>
+    {% endif %}
+    <div class="panel"><div class="panel-body">{% include "_bill_lines.html" %}</div></div>
+  </section>
+
+  <section aria-labelledby="extras-title">
+    <div class="section-head"><h2 id="extras-title">Extra charges</h2></div>
+    {% if charges %}
+    <div class="table-wrap" style="margin-bottom:1rem">
+      <table class="table stack">
+        <thead><tr><th>Description</th><th class="right">Amount</th><th></th></tr></thead>
+        <tbody>
+        {% for c in charges %}
+          <tr>
+            <td data-label="Description">{{ c.description }}</td>
+            <td data-label="Amount" class="right num">{{ c.amount_cents|money }}</td>
+            <td class="row-actions">
+              {% if res.status in ('confirmed', 'checked_in') %}
+              <form method="post" class="inline-form" data-confirm="Remove &quot;{{ c.description }}&quot; from the bill?"
+                    action="{{ url_for('main.charge_delete', reservation_id=res.id, charge_id=c.id) }}">
+                {{ csrf() }}<button class="link-button danger" type="submit">Remove</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="muted">No extra charges. Add items such as room service or parking below; tax and service charge are applied to them.</p>
+    {% endif %}
+
+    {% if res.status in ('confirmed', 'checked_in') %}
+    <form method="post" class="form" action="{{ url_for('main.charge_add', reservation_id=res.id) }}" autocomplete="off">
+      {{ csrf() }}
+      <div class="form-grid">
+        <div class="field {{ 'has-error' if errors.get('description') }}">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" maxlength="80" value="{{ form.get('description', '') }}" required>
+          {{ field_error(errors, 'description') }}
+        </div>
+        <div class="field {{ 'has-error' if errors.get('amount') }}">
+          <label for="amount">Amount ({{ hotel.currency_symbol }})</label>
+          <input type="text" id="amount" name="amount" inputmode="decimal" value="{{ form.get('amount', '') }}" placeholder="e.g. 450.00" required>
+          {{ field_error(errors, 'amount') }}
+        </div>
+      </div>
+      <div class="form-actions"><button class="btn" type="submit">Add charge</button></div>
+    </form>
+    {% else %}
+      <p class="hint">Charges are locked once a reservation is checked out or cancelled.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

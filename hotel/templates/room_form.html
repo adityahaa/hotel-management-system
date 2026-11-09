@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field_error with context %}
+{% block title %}{{ 'Edit room ' ~ room.room_number if room else 'Add room' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ 'Edit room ' ~ room.room_number if room else 'Add room' }}</h1>
+    <p>{{ 'Changes to the rate apply to new reservations only.' if room else 'Enter the room details exactly as guests will book them.' }}</p>
+  </div>
+</div>
+
+{% if errors %}<div class="alert alert-error" role="alert">Please fix the highlighted fields.</div>{% endif %}
+
+<form method="post" class="form" autocomplete="off">
+  {{ csrf() }}
+  <div class="form-grid">
+    <div class="field {{ 'has-error' if errors.get('room_number') }}">
+      <label for="room_number">Room number</label>
+      <input type="text" id="room_number" name="room_number" value="{{ form.get('room_number', '') }}" maxlength="10" required>
+      {{ field_error(errors, 'room_number') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('room_type') }}">
+      <label for="room_type">Room type</label>
+      <select id="room_type" name="room_type" required>
+        <option value="">Choose a type</option>
+        {% for t in room_types %}<option value="{{ t }}" {{ 'selected' if form.get('room_type', '') == t }}>{{ t }}</option>{% endfor %}
+      </select>
+      {{ field_error(errors, 'room_type') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('capacity') }}">
+      <label for="capacity">Sleeps (guests)</label>
+      <input type="number" id="capacity" name="capacity" min="1" max="10" step="1" value="{{ form.get('capacity', '') }}" required>
+      {{ field_error(errors, 'capacity') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('rate') }}">
+      <label for="rate">Rate per night ({{ hotel.currency_symbol }})</label>
+      <input type="text" id="rate" name="rate" inputmode="decimal" value="{{ form.get('rate', '') }}" placeholder="e.g. 5200.00" required>
+      <span class="hint">Numbers only, up to two decimal places.</span>
+      {{ field_error(errors, 'rate') }}
+    </div>
+    <div class="field full {{ 'has-error' if errors.get('description') }}">
+      <label for="description">Description (optional)</label>
+      <textarea id="description" name="description" maxlength="300">{{ form.get('description', '') }}</textarea>
+      {{ field_error(errors, 'description') }}
+    </div>
+    {% if room %}
+    <div class="field full {{ 'has-error' if errors.get('is_active') }}">
+      <div class="check">
+        <input type="checkbox" id="is_active" name="is_active" value="1" {{ 'checked' if form.get('is_active') }}>
+        <div>
+          <label for="is_active">Available for booking</label>
+          <div class="hint">Untick to take the room out of service, for example during maintenance.</div>
+        </div>
+      </div>
+      {{ field_error(errors, 'is_active') }}
+    </div>
+    {% endif %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if room else 'Add room' }}</button>
+    <a class="btn" href="{{ url_for('main.rooms') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# The itemised lines of a bill. Needs: res, bill, hotel (settings). #}
+<table class="bill-table">
+  <thead>
+    <tr><th>Description</th><th class="right">Amount</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Room {{ res.room_number }} ({{ res.room_type }}):
+        {{ bill.nights }} night{{ '' if bill.nights == 1 else 's' }} at {{ bill.rate_cents|money }}</td>
+      <td class="right num">{{ bill.room_charge_cents|money }}</td>
+    </tr>
+    {% for description, amount in bill.extras %}
+    <tr><td>{{ description }}</td><td class="right num">{{ amount|money }}</td></tr>
+    {% endfor %}
+    <tr class="subtotal"><td>Subtotal</td><td class="right num">{{ bill.subtotal_cents|money }}</td></tr>
+    <tr><td>Service charge ({{ bill.service_percent|percent }}%)</td><td class="right num">{{ bill.service_cents|money }}</td></tr>
+    <tr><td>{{ hotel.tax_name }} ({{ bill.tax_percent|percent }}%)</td><td class="right num">{{ bill.tax_cents|money }}</td></tr>
+    <tr class="total"><td>Total</td><td class="right num">{{ bill.total_cents|money }}</td></tr>
+  </tbody>
+</table>

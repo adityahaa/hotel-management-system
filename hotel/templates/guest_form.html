@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field_error with context %}
+{% block title %}{{ 'Edit guest' if guest else 'Add guest' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ 'Edit ' ~ guest.full_name if guest else 'Add guest' }}</h1>
+    <p>Only store details you need to run the stay. Use made-up data when testing.</p>
+  </div>
+</div>
+
+{% if errors %}<div class="alert alert-error" role="alert">Please fix the highlighted fields.</div>{% endif %}
+
+<form method="post" class="form" autocomplete="off">
+  {{ csrf() }}
+  <div class="form-grid">
+    <div class="field full {{ 'has-error' if errors.get('full_name') }}">
+      <label for="full_name">Full name</label>
+      <input type="text" id="full_name" name="full_name" value="{{ form.get('full_name', '') }}" maxlength="80" required>
+      {{ field_error(errors, 'full_name') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('phone') }}">
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" name="phone" value="{{ form.get('phone', '') }}" maxlength="20" placeholder="+1 555-0100" required>
+      {{ field_error(errors, 'phone') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('email') }}">
+      <label for="email">Email (optional)</label>
+      <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" maxlength="120" placeholder="name@example.com">
+      {{ field_error(errors, 'email') }}
+    </div>
+    <div class="field full {{ 'has-error' if errors.get('address') }}">
+      <label for="address">Address (optional)</label>
+      <input type="text" id="address" name="address" value="{{ form.get('address', '') }}" maxlength="200">
+      {{ field_error(errors, 'address') }}
+    </div>
+    <div class="field full {{ 'has-error' if errors.get('notes') }}">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" name="notes" maxlength="300">{{ form.get('notes', '') }}</textarea>
+      {{ field_error(errors, 'notes') }}
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if guest else 'Add guest' }}</button>
+    <a class="btn" href="{{ url_for('main.guest_detail', guest_id=guest.id) if guest else url_for('main.guests') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field_error, avail_item with context %}
+{% block title %}New reservation{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>New reservation</h1>
+    <p>Choose a guest and the dates, then pick one of the free rooms.</p>
+  </div>
+</div>
+
+{% if conflict %}
+<div class="alert alert-error" role="alert"><strong>That room is not free for these dates</strong>{{ conflict }}</div>
+{% elif errors %}
+<div class="alert alert-error" role="alert">Please fix the highlighted fields.</div>
+{% endif %}
+
+<form method="post" class="form form-wide" id="booking-form" data-api="{{ url_for('main.api_availability') }}" autocomplete="off">
+  {{ csrf() }}
+  <div class="form-grid">
+    <div class="field full {{ 'has-error' if errors.get('guest_id') }}">
+      <label for="guest_id">Guest</label>
+      <select id="guest_id" name="guest_id" required>
+        <option value="">Choose a guest</option>
+        {% for g in guests %}
+          <option value="{{ g.id }}" {{ 'selected' if form.get('guest_id', '')|string == g.id|string }}>{{ g.full_name }} ({{ g.phone }})</option>
+        {% endfor %}
+      </select>
+      {{ field_error(errors, 'guest_id') }}
+      <span class="hint">Guest not listed? <a href="{{ url_for('main.guest_new') }}">Add the guest</a> first.</span>
+    </div>
+
+    <div class="field {{ 'has-error' if errors.get('check_in') }}">
+      <label for="check_in">Check-in date</label>
+      <input type="date" id="check_in" name="check_in" value="{{ form.get('check_in', '') }}" min="{{ today.isoformat() }}" required>
+      {{ field_error(errors, 'check_in') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('check_out') }}">
+      <label for="check_out">Check-out date</label>
+      <input type="date" id="check_out" name="check_out" value="{{ form.get('check_out', '') }}" min="{{ today.isoformat() }}" required>
+      <span class="hint">The check-out night is not charged.</span>
+      {{ field_error(errors, 'check_out') }}
+    </div>
+
+    <div class="field {{ 'has-error' if errors.get('num_guests') }}">
+      <label for="num_guests">Number of guests</label>
+      <input type="number" id="num_guests" name="num_guests" min="1" max="10" step="1" value="{{ form.get('num_guests', '1') }}" required>
+      {{ field_error(errors, 'num_guests') }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('notes') }}">
+      <label for="notes">Notes (optional)</label>
+      <input type="text" id="notes" name="notes" value="{{ form.get('notes', '') }}" maxlength="300">
+      {{ field_error(errors, 'notes') }}
+    </div>
+
+    <fieldset class="field full {{ 'has-error' if errors.get('room_id') }}" style="border:0;padding:0;margin:0;min-width:0">
+      <legend class="label" style="padding:0;font-weight:600;font-size:.92rem">Room</legend>
+      <p class="hint" id="avail-summary" aria-live="polite">
+        {% if availability is none %}
+          Enter a valid check-in and check-out date to see which rooms are free.
+        {% elif availability %}
+          {% set free = availability|selectattr('available')|list|length %}
+          {{ free }} of {{ availability|length }} room{{ '' if availability|length == 1 else 's' }} free for
+          {{ availability[0].nights }} night{{ '' if availability[0].nights == 1 else 's' }}.
+        {% else %}
+          There are no rooms yet. <a href="{{ url_for('main.room_new') }}">Add a room</a> first.
+        {% endif %}
+      </p>
+      <ul class="avail-list" id="avail-list">
+        {% if availability %}
+          {% for item in availability %}{{ avail_item(item, form.get('room_id', '')|string) }}{% endfor %}
+        {% endif %}
+      </ul>
+      {{ field_error(errors, 'room_id') }}
+    </fieldset>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Create reservation</button>
+    <a class="btn" href="{{ url_for('main.reservations') }}">Cancel</a>
+  </div>
+  <p class="hint">The bill uses the room's current rate and the current tax and service settings. They are fixed for this booking once it is created.</p>
+</form>
+{% endblock %}
