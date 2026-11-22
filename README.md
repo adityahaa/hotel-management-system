@@ -8,6 +8,11 @@ paid services or API keys.
 > project (a Flask-based hotel booking, room allocation, guest records and billing app). It is **not** the
 > original source code, which is no longer available. All data shown is **synthetic demo data**.
 
+
+## Contents
+
+[Features](#features) · [Setup on Windows (first time)](#setup-on-windows-first-time) · [Using the app](#using-the-app) · [Running the tests](#running-the-tests) · [Project layout](#project-layout) · [Limitations](#limitations) · [GitHub description](#github-description) · [Licence](#licence) · [Engineering the booking lifecycle](#engineering-the-booking-lifecycle)
+
 ## Features
 
 | Area | What you can do |
@@ -182,3 +187,39 @@ tests/              pytest suite
 ## Licence
 
 No licence has been chosen yet. Add one (for example MIT) before sharing the code publicly.
+
+## Engineering the booking lifecycle
+
+The application joins availability, guest records and billing around one operational question, whether a particular room can be assigned for a requested stay. A reservation captures its commercial terms when created, then moves through explicit states. This keeps room availability and the printed charge record connected to the same booking.
+
+```mermaid
+flowchart LR
+  A[Flask routes and forms] --> B[Field validation]
+  B --> C[Reservation services]
+  C --> D[(SQLite tables and overlap trigger)]
+  C --> E[Pure billing functions]
+  E --> F[Jinja printable bill]
+  D --> G[Dashboard and availability grid]
+```
+
+### Availability and status transitions
+
+`hotel/services.py` keeps business operations separate from route rendering and accepts an open SQLite connection. Confirmed and checked-in reservations count as active. Date overlap excludes the checkout night, so one guest can depart on the next guest's arrival date. A database trigger supplies a second enforcement layer in addition to service checks.
+
+The transition map allows confirmed bookings to become checked-in or cancelled, and checked-in bookings to become checked-out. Checked-out and cancelled states are terminal. Date and validation rules constrain those actions further. This structure makes the allowed lifecycle visible in one place and gives the tests concrete invariants to verify.
+
+### Billing and historical consistency
+
+`hotel/billing.py::compute_bill` is a pure function returning a structured `Bill`. Integer minor units represent amounts, while `Decimal` and half-up rounding apply percentages. Service is calculated on room charges plus extras, and tax is calculated after service. The bill's component fields make its total explainable on the printable page.
+
+The booking captures nightly rate and percentage settings at creation. Later changes to hotel settings therefore apply to later bookings while existing records retain their agreed calculation inputs. An early checkout uses the booked nights under the current policy, which matters when interpreting a printed total.
+
+### Demonstrated workflow and reproduction
+
+The existing tests exercise room/guest creation, reservations, rejected conflicts, charges, bills and state transitions through service functions and HTTP requests. The test files separate arithmetic, validation, service behavior and the end-to-end route workflow. See the local documentation review record for checks rerun on 22 November 2026.
+
+The first launch seeds synthetic records only when the database is empty. That makes the interface explorable without entering personal guest information. `HOTEL_NO_DEMO=1` supports an empty local start. The reset commands above replace local database contents and should be used only when that replacement is intended.
+
+Further improvements can focus on editing reservation dates under the same overlap invariants and adding authenticated access if the deployment scope expands. The current reconstruction provenance remains important when describing this repository's relationship to the earlier unavailable project.
+
+[22 November documentation checks](docs/DOCUMENTATION_REVIEW.md)
