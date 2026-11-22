@@ -1,17 +1,20 @@
 # Hotel Management System
 
-A small Flask web application for managing **rooms, guests, reservations, room allocation and billing**
-in one workflow. It runs on your own computer, stores data in a local SQLite file, and needs no accounts,
-paid services or API keys.
+A Flask and SQLite app connecting room availability, guest records, reservations, check-in and itemized billing.
 
-> **About this code:** this is a **new implementation written from a short description** of an earlier
-> project (a Flask-based hotel booking, room allocation, guest records and billing app). It is **not** the
-> original source code, which is no longer available. All data shown is **synthetic demo data**.
+Room assignments, arrival dates and bills need to stay consistent as a booking moves through its lifecycle. This application brings those operations into a local browser workspace. Users can inspect a room-by-date availability grid, create guest records, reserve a suitable room, check guests in and out, and print an itemized bill.
+
+Availability checks and a database trigger reject overlapping active reservations. Explicit status transitions control booking actions, while integer-money calculations and reservation-time rate snapshots keep bills explainable. The first-run dataset contains synthetic guests and bookings for exploring the workflow.
+
+The available code is a reconstruction written from a short description of an earlier hotel project. The earlier source is unavailable. This README documents the supplied implementation and preserves that distinction when describing its history.
+
+[Run locally](#setup-on-windows-first-time) · [Feature walkthrough](#features) · [Architecture and booking rules](#engineering-the-booking-lifecycle) · [Tests](#running-the-tests) · [Recorded verification](docs/DOCUMENTATION_REVIEW.md)
+
 
 
 ## Contents
 
-[Features](#features) · [Setup on Windows (first time)](#setup-on-windows-first-time) · [Using the app](#using-the-app) · [Running the tests](#running-the-tests) · [Project layout](#project-layout) · [Limitations](#limitations) · [GitHub description](#github-description) · [Licence](#licence) · [Engineering the booking lifecycle](#engineering-the-booking-lifecycle)
+[Features](#features) · [Setup on Windows (first time)](#setup-on-windows-first-time) · [Using the app](#using-the-app) · [Running the tests](#running-the-tests) · [Project layout](#project-layout) · [Limitations](#limitations) · [Licence](#licence) · [Engineering the booking lifecycle](#engineering-the-booking-lifecycle)
 
 ## Features
 
@@ -177,16 +180,9 @@ tests/              pytest suite
 - Developed and tested on Linux with Python 3.13 and a headless Chromium browser. The Windows steps above
   have not been run on a Windows machine. Accessibility has not been formally audited.
 
-## GitHub description
-
-**Short description (repository "About" field):**
-> Flask + SQLite hotel management web app: rooms, guest records, reservations with overlap prevention, and itemised printable bills. Local-only, synthetic demo data.
-
-**Suggested topics:** `flask`, `python`, `sqlite`, `hotel-management`, `booking-system`, `web-application`, `pytest`
-
 ## Licence
 
-No licence has been chosen yet. Add one (for example MIT) before sharing the code publicly.
+A software licence has not been specified for this reconstruction. Public availability alone does not state reuse or redistribution terms. Obtain the appropriate rights-holder permission before redistributing or relicensing the code.
 
 ## Engineering the booking lifecycle
 
